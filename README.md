@@ -19,11 +19,18 @@ The ``EntityAdmin`` enforces the following rules:
 ```cpp
 #include "Abyss/ECS.hpp"
 
+#include <iostream>
+#include <string>
+
 auto main() -> int
 {
 	Abyss::ECS::EntityAdmin admin{};
 
 	auto &entity{admin.createEntity()};
+
+	admin.addComponent<std::string>(entity, "Deep down in the Abyss...");
+	
+	std::cout << admin.getComponent<std::string>(entity) << '\n';
 
 	admin.destroyEntity();
 	return 0;
@@ -45,14 +52,7 @@ public:
 
 ## Example
 ```cpp
-auto main() -> int
-{
-	Abyss::ECS::EntityAdmin admin{};
-
-	auto &entity{entityadmin.createEntity()};
-	
-	admin.destroyEntity();
-}
+// Todo
 ```
 
 ## Notes
