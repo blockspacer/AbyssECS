@@ -3,7 +3,7 @@ Abyss ECS is an experimental and standalone, fast C++17 entity component system 
 
 ## Requirements
 - A C++17 compatible compiler (clang++ is strongly recommended)
-- Basic yet modern C++ knownledge
+- Basic yet modern C++ knowledge
 
 ## Installation
 Abyss ECS is a header only library, you just need to include ``Abyss/ECS.hpp`` to start using the ECS.
@@ -16,6 +16,7 @@ The ``EntityAdmin`` enforces the following rules:
 - Usage of placement new for maximum performance by recycling previously created component of deceased entities.
 - Features a pool for each component type which is indexed for O(1) access time.
 - The pools are stored next to each others which is designed to be cache efficient.
+
 ```cpp
 #include "Abyss/ECS.hpp"
 

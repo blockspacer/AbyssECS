@@ -1,0 +1,12 @@
+*
+!*/
+!*.cpp
+!*.hpp
+
+!.clang-format
+!compile_flags.txt
+
+!LICENSE
+!README.md
+
+!.gitignore
