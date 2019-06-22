@@ -3,10 +3,10 @@
 #include "Entity.hpp"
 #include "TypeID.hpp"
 
-#include <functional>
-#include <vector>
 #include <array>
+#include <functional>
 #include <type_traits>
+#include <vector>
 
 namespace Abyss {
     namespace ECS {
@@ -31,7 +31,11 @@ public:
     virtual ~EntityAdmin();
 
     [[nodiscard]] auto createEntity() -> EntityDescriptor;
+    [[nodiscard]] auto getEntities() -> const decltype(m_entities) &;
     auto               destroyEntity(EntityDescriptor &entity) -> void;
+
+    template <typename... Ts>
+    [[nodiscard]] auto getEntitiesWithComponents() -> std::vector<std::tuple<EntityDescriptor, Ts &...>>;
 
     template <typename T, typename... Ts>
     auto addComponent(EntityDescriptor &entity, Ts &&... ts) -> T &;
@@ -42,7 +46,7 @@ public:
     template <typename... Ts>
     [[nodiscard]] auto hasComponents(EntityDescriptor &entity) -> bool;
 
-	template <typename T>
+    template <typename T>
     [[nodiscard]] auto getComponent(EntityDescriptor &entity) -> T &;
 
     template <typename... Ts>
@@ -76,10 +80,26 @@ inline auto Abyss::ECS::EntityAdmin::createEntity() -> EntityDescriptor
     return m_entities.end() - 1;
 }
 
+inline auto Abyss::ECS::EntityAdmin::getEntities() -> const decltype(m_entities) &
+{
+	return m_entities;
+}
+
 inline auto Abyss::ECS::EntityAdmin::destroyEntity(EntityDescriptor &entity) -> void
 {
     *entity = 0;
     m_deadEntities.emplace_back(entity);
+}
+
+template <typename... Ts>
+inline auto Abyss::ECS::EntityAdmin::getEntitiesWithComponents() -> std::vector<std::tuple<EntityDescriptor, Ts &...>>
+{
+	decltype(getEntitiesWithComponents<Ts...>()) entities{};
+
+	for (auto it{m_entities.begin()}; it != m_entities.end(); ++it)
+		if (hasComponents<Ts...>(it))
+			entities.emplace_back(it, getComponent<Ts>(it)...);
+	return entities;
 }
 
 template <typename T, typename... Ts>
@@ -123,21 +143,21 @@ inline auto Abyss::ECS::EntityAdmin::hasComponent(EntityDescriptor &entity) -> b
 template <typename... Ts>
 inline auto Abyss::ECS::EntityAdmin::hasComponents(EntityDescriptor &entity) -> bool
 {
-	std::array<bool, sizeof...(Ts)> array{hasComponent<Ts>(entity)...};
+    std::array<bool, sizeof...(Ts)> array{hasComponent<Ts>(entity)...};
     for (auto val : array)
-		if (!val)
-			return false;
-	return true;
+        if (!val)
+            return false;
+    return true;
 }
 
 template <typename T>
-inline auto Abyss::ECS::EntityAdmin::getComponent(EntityDescriptor &entity) -> T&
+inline auto Abyss::ECS::EntityAdmin::getComponent(EntityDescriptor &entity) -> T &
 {
-	if (!hasComponent<T>(entity))
-		throw std::runtime_error{std::string{"Couldn't get component "} + typeid(T).name()};
+    if (!hasComponent<T>(entity))
+        throw std::runtime_error{std::string{"Couldn't get component "} + typeid(T).name()};
 
     auto &&[id, bitID]{TypeID::info<T>()};
-    auto  index{static_cast<unsigned long long>(std::distance(m_entities.begin(), entity))};
+    auto index{static_cast<unsigned long long>(std::distance(m_entities.begin(), entity))};
     auto &&[pool, deleter]{m_componentPools[id]};
     return *static_cast<T *>(pool[index]);
 }
@@ -145,8 +165,8 @@ inline auto Abyss::ECS::EntityAdmin::getComponent(EntityDescriptor &entity) -> T
 template <typename... Ts>
 inline auto Abyss::ECS::EntityAdmin::getComponents(EntityDescriptor &entity) -> std::tuple<Ts &...>
 {
-	std::tuple<Ts &...> tuple{getComponent<Ts>(entity)...};
-	return tuple;
+    std::tuple<Ts &...> tuple{getComponent<Ts>(entity)...};
+    return tuple;
 }
 
 template <typename T>

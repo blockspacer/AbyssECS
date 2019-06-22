@@ -7,59 +7,88 @@
 
 #include "Abyss/ECS.hpp"
 
-#include <bitset>
+#include <chrono>
 #include <iostream>
+
+struct Position final {
+    float x{0}, y{0}, dx{1}, dy{1};
+};
+
+struct Position2 final {
+    float x{0}, y{0}, dx{1}, dy{1};
+};
+
+struct Renderer {};
 
 class Bomberman final : protected Abyss::ECS::EntityAdmin {
 public:
     explicit Bomberman()
     {
-        auto entity{createEntity()};
-		std::cout << hasComponent<std::string>(entity) << '\n';
+        for (std::size_t i{0}; i < 4096 * 100; ++i) {
+            auto ent{createEntity()};
+            addComponent<Position>(ent);
+            addComponent<Position2>(ent);
 
-        auto &str{addComponent<std::string>(entity, "Ts &&ts...")};
-		std::cout << hasComponent<std::string>(entity) << '\n';
-		str = "Hey";
-
-		auto &wow{getComponent<std::string>(entity)};
-		std::cout << wow << std::endl;
-
-		deleteComponent<std::string>(entity);
-		std::cout << hasComponent<std::string>(entity) << '\n';
+            if (i == 0)
+                addComponent<Renderer>(ent);
+        }
     }
 
     ~Bomberman()
     {
     }
 
-    inline auto MovementSystem() -> void
+    inline auto MovementSystem(float dt) -> void
     {
-        // Todo: Get all the entities with a position component
+        auto entities{getEntitiesWithComponents<Position>()};
+
+        for (auto &&[entity, position] : entities) {
+            position.x += position.dx * dt;
+            position.y += position.dy * dt;
+        }
+    }
+
+    inline auto Movement2System(float dt) -> void
+    {
+        auto entities{getEntitiesWithComponents<Position2>()};
+
+        for (auto &&[entity, position] : entities) {
+            position.x += position.dx * dt;
+            position.y += position.dy * dt;
+        }
+    }
+
+    inline auto RendererSystem(float) -> void
+    {
+        auto entities{getEntitiesWithComponents<Position, Renderer>()};
+
+        for (auto &&[entity, position, renderer] : entities)
+            std::cout << position.x << ' ' << position.y << '\n';
+        std::cout << '\n';
+    }
+
+    inline auto think(float dt)
+    {
+        MovementSystem(dt);
+        Movement2System(dt);
+    }
+
+    inline auto paint(float dt)
+    {
+        RendererSystem(dt);
     }
 };
 
 auto main() -> int
 {
-    Bomberman game{};
-    {
-        auto &&[id, bitID]{Abyss::ECS::TypeID::info<std::string>()};
-        std::cout << id << '\t' << std::bitset<sizeof(bitID) * 8>(bitID) << '\t' << bitID << '\n';
-    }
-    {
-        auto &&[id, bitID]{Abyss::ECS::TypeID::info<std::size_t>()};
-        std::cout << id << '\t' << std::bitset<sizeof(bitID) * 8>(bitID) << '\t' << bitID << '\n';
-    }
-    {
-        auto &&[id, bitID]{Abyss::ECS::TypeID::info<std::int8_t>()};
-        std::cout << id << '\t' << std::bitset<sizeof(bitID) * 8>(bitID) << '\t' << bitID << '\n';
-    }
-    {
-        auto &&[id, bitID]{Abyss::ECS::TypeID::info<std::int64_t>()};
-        std::cout << id << '\t' << std::bitset<sizeof(bitID) * 8>(bitID) << '\t' << bitID << '\n';
-    }
-    {
-        auto &&[id, bitID]{Abyss::ECS::TypeID::info<std::uint32_t>()};
-        std::cout << id << '\t' << std::bitset<sizeof(bitID) * 8>(bitID) << '\t' << bitID << '\n';
+    Bomberman                                          game{};
+    std::chrono::time_point<std::chrono::system_clock> now{std::chrono::system_clock::now()};
+
+    while (true) {
+        auto dt{static_cast<float>(std::chrono::nanoseconds(std::chrono::system_clock::now() - now).count()) / 1000000000.0f};
+        now = std::chrono::system_clock::now();
+        game.think(dt);
+        game.paint(dt);
     }
     return 0;
 }
