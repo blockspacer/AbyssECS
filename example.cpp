@@ -24,7 +24,7 @@ class Bomberman final : protected Abyss::ECS::EntityAdmin {
 public:
     explicit Bomberman()
     {
-        for (std::size_t i{0}; i < 4096 * 100; ++i) {
+        for (std::size_t i{0}; i < 4096; ++i) {
             auto ent{createEntity()};
             addComponent<Position>(ent);
             addComponent<Position2>(ent);
